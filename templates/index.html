@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HK Student Hub – THPT Hương Khê</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- ========================================== -->
+  <!-- 1. LOGIN SCREEN (HIỂN THỊ KHI CHƯA LOGIN) -->
+  <!-- ========================================== -->
+  <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      
+      <!-- Header Banner -->
+      <div class="bg-brand-900 text-white p-6 text-center relative overflow-hidden">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
+          <i data-lucide="graduation-cap" class="w-8 h-8 text-blue-200"></i>
+        </div>
+        <h2 class="text-sm font-extrabold tracking-wider uppercase text-blue-100">TRƯỜNG THPT HƯƠNG KHÊ – HÀ TĨNH</h2>
+        <h1 class="text-xl font-black text-white mt-1">HK Student Hub</h1>
+        <p class="text-[11px] text-blue-200/90 italic mt-1">“Kỷ cương số – Thi đua minh bạch – Đồng hành cùng học sinh”</p>
+      </div>
+
+      <!-- Login Form Body -->
+      <form id="login-form" onsubmit="handleLoginSubmit(event)" class="p-6 sm:p-7 space-y-4 text-xs">
+        
+        <div class="text-center mb-1">
+          <h3 class="font-bold text-slate-900 text-sm">Đăng nhập tài khoản</h3>
+          <p class="text-slate-500 text-[11px]">Hệ thống yêu cầu xác thực người dùng để truy cập đúng phân quyền</p>
+        </div>
+
+        <div id="login-error-alert" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium"></div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tên đăng nhập <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <input type="text" id="login-username" required placeholder="Nhập tên đăng nhập..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs focus:ring-2 focus:ring-brand-500 focus:bg-white font-medium">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mật khẩu <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <input type="password" id="login-password" required placeholder="Nhập mật khẩu..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs focus:ring-2 focus:ring-brand-500 focus:bg-white font-mono">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-xs">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>Đăng nhập hệ thống</span>
+        </button>
+
+        <!-- Reference Accounts for Testing -->
+        <div class="pt-3 border-t border-slate-100">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Tài khoản thử nghiệm theo vai trò (Bấm để điền nhanh)</div>
+          <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+            <button type="button" onclick="fillTestAccount('admin', 'admin_password_2026')" class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left truncate">
+              <span class="font-bold text-brand-900">1. Admin</span> (Quản trị)
+            </button>
+            <button type="button" onclick="fillTestAccount('bgh.huongkhe', 'bgh_password_2026')" class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left truncate">
+              <span class="font-bold text-brand-900">2. BGH</span> (Ban Giám hiệu)
+            </button>
+            <button type="button" onclick="fillTestAccount('doantruong.hk', 'doan_password_2026')" class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left truncate">
+              <span class="font-bold text-brand-900">3. Đoàn trường</span>
+            </button>
+            <button type="button" onclick="fillTestAccount('saodo.tuan1', 'saodo_password_2026')" class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left truncate">
+              <span class="font-bold text-brand-900">4. Sao đỏ</span> (Trực tuần)
+            </button>
+            <button type="button" onclick="fillTestAccount('gvcn.10a1', 'gvcn_password_2026')" class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left truncate">
+              <span class="font-bold text-brand-900">5. GVCN</span> (Lớp 10A1)
+            </button>
+            <button type="button" onclick="fillTestAccount('hocsinh.nam', 'hocsinh_password_2026')" class="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left truncate">
+              <span class="font-bold text-brand-900">6. Học sinh</span> (10A1)
+            </button>
+            <button type="button" onclick="fillTestAccount('tamly.huongkhe', 'tamly_password_2026')" class="col-span-2 p-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-left truncate text-rose-900">
+              <span class="font-bold">7. Chuyên viên tâm lý</span> (Cô Linh - Quyền tư vấn Góc sẻ chia)
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 2. TOP HEADER (KHI ĐÃ ĐĂNG NHẬP) -->
+  <!-- ========================================== -->
+  <header class="bg-brand-900 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- School Name & Logo -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 text-white font-bold text-lg shadow-inner">
+            <i data-lucide="graduation-cap" class="w-6 h-6 text-blue-200"></i>
+          </div>
+          <div>
+            <div class="font-extrabold text-sm sm:text-base tracking-wide uppercase leading-tight text-white flex items-center gap-1.5">
+              <span>TRƯỜNG THPT HƯƠNG KHÊ – HÀ TĨNH</span>
+              <span class="hidden md:inline-block px-1.5 py-0.5 text-[10px] bg-blue-500/30 border border-blue-400/40 rounded text-blue-100 font-medium">Hà Tĩnh</span>
+            </div>
+            <div class="text-[11px] text-blue-200/90 font-medium hidden sm:block">
+              HK Student Hub • <span class="italic">“Kỷ cương số – Thi đua minh bạch – Đồng hành cùng học sinh”</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Authenticated User Profile & Logout (Không còn Dropdown đổi quyền tự do) -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          
+          <!-- Role & User Badge -->
+          <div id="user-badge" class="flex items-center space-x-2 bg-blue-950/70 px-3 py-1.5 rounded-full border border-blue-700/60 shadow-sm">
+            <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm" id="user-avatar-text">
+              AD
+            </div>
+            <div class="text-left hidden sm:block">
+              <div class="text-xs font-bold text-white max-w-[130px] truncate" id="user-display-name">Quản trị viên</div>
+              <div class="text-[10px] text-blue-200" id="user-role-text">Quản trị viên hệ thống</div>
+            </div>
+          </div>
+
+          <!-- Logout Button -->
+          <button onclick="handleLogout()" title="Đăng xuất an toàn" class="px-2.5 py-1.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline">Đăng xuất</span>
+          </button>
+
+          <!-- Mobile Menu Button -->
+          <button onclick="toggleMobileMenu()" class="md:hidden p-1.5 rounded-lg text-blue-200 hover:text-white hover:bg-brand-800">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Sub-bar: Academic Info & Live Date -->
+    <div class="bg-brand-800/50 border-t border-brand-700/50 px-4 py-1 text-[11px] text-blue-100 flex flex-wrap justify-between items-center max-w-7xl mx-auto">
+      <div class="flex items-center space-x-4">
+        <span><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-blue-300"></i>Năm học: <b>2026-2027</b></span>
+        <span><i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1 text-blue-300"></i>Học kỳ: <b>Học kỳ I</b> (Tuần 7)</span>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span id="current-datetime" class="font-mono">Thứ Năm, 15/10/2026</span>
+        <span class="inline-flex items-center px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded text-[10px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Bảo mật RBAC kích hoạt
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 3. MAIN WRAPPER (SIDEBAR + CONTENT) -->
+  <!-- ========================================== -->
+  <div class="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
+
+    <!-- DESKTOP SIDEBAR NAVIGATION -->
+    <aside class="w-64 shrink-0 hidden md:block">
+      <nav class="sticky top-28 space-y-1 bg-white p-3 rounded-2xl shadow-sm border border-slate-200/80">
+        
+        <button onclick="navigateTab('dashboard')" id="nav-btn-dashboard" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-brand-900 bg-brand-50 border border-brand-100 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-brand-600"></i>
+          <span>Tổng quan</span>
+        </button>
+
+        <button onclick="navigateTab('conduct')" id="nav-btn-conduct" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-brand-900 hover:bg-slate-50 transition">
+          <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-500"></i>
+          <span>Quản lý nền nếp</span>
+        </button>
+
+        <button onclick="navigateTab('competition')" id="nav-btn-competition" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-brand-900 hover:bg-slate-50 transition">
+          <i data-lucide="award" class="w-4 h-4 text-slate-500"></i>
+          <span>Thi đua Chi đoàn</span>
+        </button>
+
+        <button onclick="navigateTab('alerts')" id="nav-btn-alerts" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-brand-900 hover:bg-slate-50 transition">
+          <div class="flex items-center space-x-3">
+            <i data-lucide="bell-ring" class="w-4 h-4 text-slate-500"></i>
+            <span>Cảnh báo & GVCN</span>
+          </div>
+          <span id="sidebar-alert-badge" class="hidden px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full">0</span>
+        </button>
+
+        <div class="pt-2 pb-1">
+          <div class="border-t border-slate-200/70 my-1"></div>
+          <span class="px-3 text-[10px] uppercase font-bold tracking-wider text-slate-400">Đồng hành học đường</span>
+        </div>
+
+        <button onclick="navigateTab('counseling')" id="nav-btn-counseling" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-700 bg-rose-50/50 hover:bg-rose-100/60 transition border border-rose-200/60">
+          <i data-lucide="heart-handshake" class="w-4 h-4 text-rose-600"></i>
+          <span class="font-semibold">Góc sẻ chia</span>
+        </button>
+
+        <div class="pt-2 pb-1">
+          <div class="border-t border-slate-200/70 my-1"></div>
+          <span class="px-3 text-[10px] uppercase font-bold tracking-wider text-slate-400">Báo cáo & Tiện ích</span>
+        </div>
+
+        <button onclick="navigateTab('reports')" id="nav-btn-reports" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-brand-900 hover:bg-slate-50 transition">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-slate-500"></i>
+          <span>Báo cáo & Xuất file</span>
+        </button>
+
+        <!-- Admin Only User Management Navigation -->
+        <button onclick="navigateTab('users')" id="nav-btn-users" class="nav-item hidden w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-brand-900 hover:bg-slate-50 transition">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-purple-600"></i>
+          <span>Duyệt chức vụ & Quyền</span>
+        </button>
+
+        <button onclick="navigateTab('settings')" id="nav-btn-settings" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-brand-900 hover:bg-slate-50 transition">
+          <i data-lucide="settings" class="w-4 h-4 text-slate-500"></i>
+          <span>Cấu hình & Nhật ký</span>
+        </button>
+
+      </nav>
+
+      <!-- Quick Action Mobile Button for Sao Đỏ -->
+      <div id="quick-action-widget" class="mt-4 p-4 rounded-2xl bg-gradient-to-br from-brand-900 to-blue-700 text-white shadow-sm">
+        <div class="flex items-center space-x-2 mb-2 font-bold text-sm">
+          <i data-lucide="zap" class="w-4 h-4 text-yellow-300"></i>
+          <span>Ghi nhận nhanh</span>
+        </div>
+        <p class="text-xs text-blue-100 mb-3 leading-relaxed">
+          Dành cho Đội Sao đỏ & Giáo viên ghi nhận vi phạm tại lớp hoặc cổng trường.
+        </p>
+        <button onclick="openQuickViolationModal()" class="w-full py-2 bg-yellow-400 hover:bg-yellow-300 text-brand-900 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 shadow-sm transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Ghi nhận vi phạm</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 min-w-0">
+      
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-pane space-y-6">
+        
+        <!-- Welcome Banner -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-brand-700 border border-blue-200/60 mb-2">
+              <span id="dash-role-badge">Quản trị viên</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900">
+              Xin chào, <span id="dash-user-name">Quản trị viên</span>!
+            </h1>
+            <p class="text-sm text-slate-500 mt-1" id="dash-welcome-sub">
+              Chào mừng bạn đến với hệ thống quản lý nền nếp và thi đua Trường THPT Hương Khê.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openQuickViolationModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center space-x-1.5 transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Ghi nhận vi phạm</span>
+            </button>
+            <button onclick="navigateTab('competition')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition flex items-center space-x-1.5">
+              <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>
+              <span>Xem BXH Thi đua</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Cards Grid (5 Cards) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-400 mb-1.5">
+              <span class="text-xs font-semibold text-slate-500">Vi phạm hôm nay</span>
+              <div class="p-1.5 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-2xl font-black text-slate-900" id="stat-violations-today">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Ghi nhận trong ngày</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-400 mb-1.5">
+              <span class="text-xs font-semibold text-slate-500">Chờ xác minh</span>
+              <div class="p-1.5 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-2xl font-black text-amber-600" id="stat-violations-pending">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Đoàn trường chờ duyệt</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-400 mb-1.5">
+              <span class="text-xs font-semibold text-slate-500">Lượt xác minh tuần</span>
+              <div class="p-1.5 bg-blue-50 text-brand-600 rounded-lg"><i data-lucide="check-check" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-2xl font-black text-brand-700" id="stat-violations-week">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Đã trừ điểm thi đua</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-400 mb-1.5">
+              <span class="text-xs font-semibold text-slate-500">Cảnh báo sớm GVCN</span>
+              <div class="p-1.5 bg-purple-50 text-purple-600 rounded-lg"><i data-lucide="bell" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-2xl font-black text-purple-700" id="stat-alerts-active">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Học sinh vượt ngưỡng</div>
+          </div>
+
+          <div class="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-400 mb-1.5">
+              <span class="text-xs font-semibold text-slate-500">Quy mô toàn trường</span>
+              <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="school" class="w-4 h-4"></i></div>
+            </div>
+            <div class="text-2xl font-black text-slate-800"><span id="stat-classes-count">9</span> <span class="text-xs font-normal text-slate-400">Lớp</span></div>
+            <div class="text-[10px] text-slate-400 mt-1"><span id="stat-students-count">362</span> học sinh theo dõi</div>
+          </div>
+
+        </div>
+
+        <!-- Role Specific Notice (If GVCN or Student or Counselor) -->
+        <div id="role-personalized-banner" class="hidden"></div>
+
+        <!-- Charts and Leaderboard Preview (3 Columns Grid) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          
+          <!-- Chart 1: Violations Trend (Bar Chart, 6 cols) -->
+          <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-900 text-sm">Xu hướng vi phạm theo ngày</h3>
+                <p class="text-xs text-slate-500">So sánh số lỗi đã xác minh và đang chờ duyệt trong tuần</p>
+              </div>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg font-medium">Tuần 7</span>
+            </div>
+            <div class="h-60 relative">
+              <canvas id="violationsTrendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Category Breakdown (Doughnut Chart, 3 cols) -->
+          <div class="lg:col-span-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-slate-900 text-sm">Cơ cấu nhóm nội quy</h3>
+                <span class="text-[11px] text-slate-400">Tỷ lệ %</span>
+              </div>
+              <p class="text-xs text-slate-500 mb-3">Phân bổ vi phạm theo nhóm</p>
+              <div class="h-44 relative flex items-center justify-center">
+                <canvas id="categoryDoughnutChart"></canvas>
+              </div>
+            </div>
+            <div class="mt-2 text-[10px] text-slate-500 text-center">
+              Chuyên cần & Tác phong chiếm tỷ lệ cao nhất
+            </div>
+          </div>
+
+          <!-- Widget: Top Class Leaderboard (3 cols) -->
+          <div class="lg:col-span-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <i data-lucide="medal" class="w-4 h-4 text-amber-500"></i>
+                  <span>Top đầu thi đua</span>
+                </h3>
+                <button onclick="navigateTab('competition')" class="text-[11px] text-brand-600 hover:underline font-semibold">Tất cả &rarr;</button>
+              </div>
+              <p class="text-xs text-slate-500 mb-3">Xếp hạng Chi đoàn Tuần 7</p>
+              
+              <div class="space-y-2" id="dash-top-classes-list">
+                <div class="text-center py-6 text-xs text-slate-400">Đang tải xếp hạng...</div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 flex items-center justify-between">
+              <span>Khởi điểm: 100đ</span>
+              <span class="text-emerald-600 font-semibold">Cộng trừ tự động</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Activity & Quick Action Queue -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">Bản ghi vi phạm ghi nhận gần đây</h3>
+              <p class="text-xs text-slate-500">Danh sách các sự việc vừa được Đội Sao đỏ hoặc Giáo viên ghi nhận</p>
+            </div>
+            <button onclick="navigateTab('conduct')" class="text-xs text-brand-600 hover:underline font-medium">Quản lý toàn bộ vi phạm &rarr;</button>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-y border-slate-200/70">
+                <tr>
+                  <th class="py-2.5 px-3">Mã bản ghi</th>
+                  <th class="py-2.5 px-3">Thời gian</th>
+                  <th class="py-2.5 px-3">Lớp</th>
+                  <th class="py-2.5 px-3">Học sinh / Đối tượng</th>
+                  <th class="py-2.5 px-3">Lỗi vi phạm</th>
+                  <th class="py-2.5 px-3">Điểm trừ</th>
+                  <th class="py-2.5 px-3">Trạng thái</th>
+                  <th class="py-2.5 px-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="dash-recent-violations-body" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="text-center py-6 text-slate-400">Đang tải dữ liệu...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: CONDUCT & VIOLATIONS -->
+      <section id="tab-conduct" class="tab-pane hidden space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Quản lý nền nếp học sinh</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Tiếp nhận, tra cứu, xác minh bản ghi Sao đỏ và xử lý khiếu nại</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="openQuickViolationModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center space-x-1.5 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Ghi nhận vi phạm mới</span>
+              </button>
+              <button onclick="exportViolationsExcel()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center space-x-1.5 transition">
+                <i data-lucide="download" class="w-4 h-4 text-emerald-600"></i>
+                <span>Xuất Excel</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filters Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-slate-50/70 rounded-xl border border-slate-200/60 mb-5">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Lọc theo Lớp</label>
+              <select id="filter-conduct-class" onchange="loadConductViolations()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-brand-500">
+                <option value="">Tất cả các lớp</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Trạng thái xác minh</label>
+              <select id="filter-conduct-status" onchange="loadConductViolations()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-brand-500">
+                <option value="">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ xác minh</option>
+                <option value="VERIFIED">Đã xác minh</option>
+                <option value="REJECTED">Không đủ căn cứ</option>
+                <option value="ADJUSTED">Đã điều chỉnh</option>
+                <option value="APPEALING">Đang khiếu nại</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Từ ngày</label>
+              <input type="date" id="filter-conduct-from" onchange="loadConductViolations()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-brand-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Đến ngày</label>
+              <input type="date" id="filter-conduct-to" onchange="loadConductViolations()" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <!-- Violations Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200/70">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-3">Mã VP</th>
+                  <th class="py-3 px-3">Thời gian</th>
+                  <th class="py-3 px-3">Lớp</th>
+                  <th class="py-3 px-3">Học sinh vi phạm</th>
+                  <th class="py-3 px-3">Lỗi nền nếp</th>
+                  <th class="py-3 px-3">Vị trí</th>
+                  <th class="py-3 px-3">Điểm trừ</th>
+                  <th class="py-3 px-3">Trạng thái</th>
+                  <th class="py-3 px-3">Minh chứng</th>
+                  <th class="py-3 px-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="conduct-violations-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr><td colspan="10" class="text-center py-8 text-slate-400">Đang tải danh sách vi phạm...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Bottom Note -->
+          <div class="mt-3 text-[11px] text-slate-500 flex flex-wrap justify-between items-center">
+            <span>* Ghi chú: Bản ghi <b>Chờ xác minh</b> không làm thay đổi điểm thi đua của Chi đoàn.</span>
+            <span id="conduct-count-summary" class="font-medium">Hiển thị: 0 bản ghi</span>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TAB 3: COMPETITION (THI ĐUA CHI ĐOÀN) -->
+      <section id="tab-competition" class="tab-pane hidden space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold text-slate-900">Bảng xếp hạng thi đua Chi đoàn</h2>
+                <span id="period-lock-indicator" class="badge bg-slate-100 text-slate-600">Đang mở</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5" id="competition-period-title">
+                Kỳ thi đua: Tuần 7 - Học kỳ I (2026-2027)
+              </p>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="recalculateScores()" id="btn-recalculate-score" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-brand-700 font-semibold text-xs rounded-xl flex items-center space-x-1 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Tính lại điểm tự động</span>
+              </button>
+              
+              <button onclick="toggleLockPeriod()" id="btn-lock-period" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center space-x-1 transition">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                <span id="btn-lock-period-text">Chốt kết quả</span>
+              </button>
+
+              <button onclick="exportCompetitionExcel()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center space-x-1 transition">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                <span>Xuất Excel</span>
+              </button>
+
+              <button onclick="exportCompetitionPdf()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center space-x-1 transition">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Xuất PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Formula Explainer Banner -->
+          <div class="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-xs text-brand-900 mb-5 flex items-start gap-3">
+            <i data-lucide="info" class="w-4 h-4 text-brand-600 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold">Công thức tính điểm thi đua:</span>
+              <span> Điểm thi đua = <b>Điểm khởi đầu (100.0đ)</b> + <b>Tổng điểm cộng phong trào</b> − <b>Tổng điểm trừ (từ các vi phạm ĐÃ XÁC MINH)</b>. Giới hạn sàn: 0đ, trần: 150đ. Việc điều chỉnh bản ghi vi phạm sẽ tự động kích hoạt tính lại kết quả.</span>
+            </div>
+          </div>
+
+          <!-- Grade Filter Tabs -->
+          <div class="flex items-center space-x-2 border-b border-slate-200 pb-3 mb-4">
+            <button onclick="filterCompetitionGrade('')" class="comp-grade-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-900 text-white">Toàn trường</button>
+            <button onclick="filterCompetitionGrade(10)" class="comp-grade-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Khối 10</button>
+            <button onclick="filterCompetitionGrade(11)" class="comp-grade-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Khối 11</button>
+            <button onclick="filterCompetitionGrade(12)" class="comp-grade-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Khối 12</button>
+          </div>
+
+          <!-- Competition Scores Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200/70">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-3 text-center w-16">Hạng</th>
+                  <th class="py-3 px-3">Chi đoàn / Lớp</th>
+                  <th class="py-3 px-3">Khối</th>
+                  <th class="py-3 px-3">GVCN</th>
+                  <th class="py-3 px-3 text-right">Điểm gốc</th>
+                  <th class="py-3 px-3 text-right">Điểm cộng</th>
+                  <th class="py-3 px-3 text-right text-rose-600">Điểm trừ</th>
+                  <th class="py-3 px-3 text-right font-bold text-brand-900">Tổng điểm</th>
+                  <th class="py-3 px-3 text-center">Số vi phạm</th>
+                  <th class="py-3 px-3 text-center">Biến động</th>
+                  <th class="py-3 px-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="competition-scores-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr><td colspan="11" class="text-center py-8 text-slate-400">Đang tải bảng điểm thi đua...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TAB 4: ALERTS & GVCN INTERVENTIONS -->
+      <section id="tab-alerts" class="tab-pane hidden space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Cảnh báo sớm & Phối hợp GVCN</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Tự động phát hiện nguy cơ vượt ngưỡng từ các vi phạm đã xác minh để hỗ trợ sư phạm kịp thời</p>
+            </div>
+
+            <div class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-xl border border-purple-200/60 font-medium">
+              Quy tắc: Đi học muộn &ge; 3 lần/tuần | Lỗi lặp lại &ge; 2 lần
+            </div>
+          </div>
+
+          <!-- Alert Cards Container -->
+          <div id="alerts-cards-container" class="space-y-4">
+            <div class="text-center py-8 text-slate-400 text-xs">Đang tải danh sách cảnh báo...</div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TAB 5: COUNSELING ("GÓC SẺ CHIA") -->
+      <section id="tab-counseling" class="tab-pane hidden space-y-6">
+        
+        <!-- Header Banner -->
+        <div class="bg-gradient-to-r from-rose-700 via-rose-600 to-pink-600 text-white p-6 rounded-2xl shadow-sm relative overflow-hidden">
+          <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 border border-white/30 text-rose-100 mb-2">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>Khu vực hỗ trợ tâm lý học đường bảo mật</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Góc sẻ chia – Đồng hành cùng bạn</h2>
+            <p class="text-xs sm:text-sm text-rose-100 mt-1 leading-relaxed">
+              Nơi lắng nghe những tâm tư, áp lực học tập, khó khăn bạn bè hoặc chuyện gia đình. Thông tin được giữ bí mật, không dùng để xếp loại thi đua hay kỷ luật học sinh.
+            </p>
+          </div>
+          <div class="absolute -right-6 -bottom-6 text-white/10 pointer-events-none">
+            <i data-lucide="heart" class="w-48 h-48"></i>
+          </div>
+        </div>
+
+        <!-- Emergency & Safety Notice -->
+        <div class="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold text-amber-800">Lưu ý quan trọng về an toàn:</span>
+            <span> Đây là kênh tiếp nhận đề nghị tư vấn, không phải công cụ chẩn đoán sức khỏe tâm thần. Nếu bạn hoặc người khác đang trong tình huống nguy hiểm khẩn cấp hoặc có nguy cơ tự làm hại, hãy liên hệ ngay <b>Tổng đài Quốc gia 111 (miễn phí 24/7)</b> hoặc đến trực tiếp Phòng Y tế / Tư vấn tâm lý Trường THPT Hương Khê để được hỗ trợ tức thì.</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Column Left: Request Form (7 cols) -->
+          <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <h3 class="font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
+              <i data-lucide="pen-tool" class="w-4 h-4 text-rose-600"></i>
+              <span>Gửi đề nghị hỗ trợ tâm lý</span>
+            </h3>
+
+            <form id="counseling-submit-form" onsubmit="handleCounselingSubmit(event)" class="space-y-4">
+              
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Chủ đề cần sẻ chia <span class="text-rose-500">*</span></label>
+                <select id="counseling-topic" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-rose-500 focus:bg-white">
+                  <option value="ACADEMIC">Áp lực học tập, thi cử, kỳ vọng gia đình</option>
+                  <option value="PEER">Khó khăn trong quan hệ bạn bè, tẩy chay, hiểu lầm</option>
+                  <option value="FAMILY">Mâu thuẫn hoặc biến cố trong gia đình</option>
+                  <option value="ADAPTATION">Khó khăn trong hòa nhập môi trường THPT</option>
+                  <option value="SAFETY">Bị bắt nạt hoặc cảm thấy không an toàn</option>
+                  <option value="OTHER">Tâm sự hoặc chủ đề khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nội dung bạn muốn chia sẻ <span class="text-rose-500">*</span></label>
+                <textarea id="counseling-content" required rows="4" placeholder="Hãy viết những điều bạn đang trăn trở, gặp khó khăn... (Cán bộ tư vấn sẽ đọc và hỗ trợ bạn)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:ring-2 focus:ring-rose-500 focus:bg-white"></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Hình thức phản hồi mong muốn</label>
+                  <select id="counseling-channel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-rose-500 focus:bg-white">
+                    <option value="IN_PERSON">Hẹn gặp trực tiếp tại Phòng tư vấn trường</option>
+                    <option value="MESSAGING">Nhắn tin phản hồi qua mã hồ sơ hệ thống</option>
+                    <option value="EMAIL">Gửi thư trao đổi qua Email</option>
+                    <option value="PHONE">Gọi điện thoại trao đổi riêng</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Khung giờ thuận tiện trao đổi</label>
+                  <input type="text" id="counseling-schedule" placeholder="VD: Giờ ra chơi thứ Ba, sau 16h30..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-rose-500 focus:bg-white">
+                </div>
+              </div>
+
+              <!-- Identity & Anonymity Settings -->
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-700">Tùy chọn ẩn danh</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="counseling-is-anonymous" onchange="toggleAnonymityField(this.checked)" class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600"></div>
+                  </label>
+                </div>
+                <p class="text-[11px] text-slate-500">
+                  Khi bật ẩn danh, tên thật của bạn sẽ không hiển thị với cán bộ tiếp nhận thông thường. Hệ thống cấp cho bạn 1 Mã hồ sơ bí mật để tra cứu tiến trình.
+                </p>
+                <div id="alias-field-wrapper" class="hidden pt-1">
+                  <input type="text" id="counseling-alias" placeholder="Nhập bí danh (VD: Học sinh K10, Mây Trắng...)" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Thông tin liên hệ tự nguyện (không bắt buộc)</label>
+                <input type="text" id="counseling-contact" placeholder="SĐT, Zalo hoặc Email để cán bộ liên lạc khi cần thiết" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-rose-500 focus:bg-white">
+              </div>
+
+              <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center space-x-2">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Gửi đề nghị hỗ trợ bảo mật</span>
+              </button>
+
+            </form>
+          </div>
+
+          <!-- Column Right: Tracking & Counselor Zone (5 cols) -->
+          <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Anonymous Tracking Box -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+              <h3 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-1.5">
+                <i data-lucide="search" class="w-4 h-4 text-brand-600"></i>
+                <span>Tra cứu tiến độ hồ sơ hỗ trợ</span>
+              </h3>
+              <p class="text-xs text-slate-500 mb-3">Nhập mã hồ sơ bảo mật (VD: GSC-2026-X8F9) để xem lịch hẹn hoặc trạng thái phản hồi.</p>
+              
+              <div class="flex gap-2 mb-3">
+                <input type="text" id="track-code-input" placeholder="Nhập mã GSC-..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono uppercase focus:ring-2 focus:ring-brand-500">
+                <button onclick="checkCounselingTracking()" class="px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white font-semibold text-xs rounded-xl transition">Tra cứu</button>
+              </div>
+
+              <div id="track-result-box" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5"></div>
+            </div>
+
+            <!-- Counselor Specialist Access Section -->
+            <div id="counselor-authorized-box" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <i data-lucide="lock" class="w-4 h-4 text-rose-600"></i>
+                  <span>Hộp thư Chuyên viên tâm lý</span>
+                </h3>
+                <span class="badge bg-rose-100 text-rose-800 text-[10px]">Chuyên biệt</span>
+              </div>
+              <p class="text-xs text-slate-500 mb-3" id="counselor-status-desc">
+                Khu vực quản lý hồ sơ tiếp nhận dành riêng cho nhân sự được phân quyền chuyên môn.
+              </p>
+
+              <div id="counselor-requests-list" class="space-y-2.5">
+                <div class="text-center py-4 text-xs text-slate-400">Chưa kiểm tra quyền...</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TAB 6: REPORTS -->
+      <section id="tab-reports" class="tab-pane hidden space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+          <h2 class="text-lg font-bold text-slate-900 mb-1">Trung tâm báo cáo & Xuất dữ liệu</h2>
+          <p class="text-xs text-slate-500 mb-6">Xuất dữ liệu thực tế từ cơ sở dữ liệu định dạng Excel và PDF có tiêu đề trường THPT Hương Khê</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-300 transition">
+              <div class="p-2.5 bg-emerald-100 text-emerald-800 w-fit rounded-lg mb-3">
+                <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm mb-1">Báo cáo thi đua Chi đoàn</h4>
+              <p class="text-xs text-slate-500 mb-3">Bảng xếp hạng đầy đủ điểm gốc, điểm cộng, điểm trừ và biến động hạng theo tuần.</p>
+              <div class="flex gap-2">
+                <button onclick="exportCompetitionExcel()" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition text-center">Excel (.xlsx)</button>
+                <button onclick="exportCompetitionPdf()" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg transition text-center">PDF (.pdf)</button>
+              </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-300 transition">
+              <div class="p-2.5 bg-blue-100 text-brand-800 w-fit rounded-lg mb-3">
+                <i data-lucide="clipboard-x" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm mb-1">Báo cáo danh sách vi phạm</h4>
+              <p class="text-xs text-slate-500 mb-3">Tổng hợp chi tiết các bản ghi vi phạm nền nếp, phân loại theo lớp và thời gian.</p>
+              <button onclick="exportViolationsExcel()" class="w-full py-1.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-lg transition text-center">Xuất Excel (.xlsx)</button>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-300 transition">
+              <div class="p-2.5 bg-purple-100 text-purple-800 w-fit rounded-lg mb-3">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm mb-1">Báo cáo cảnh báo & GVCN</h4>
+              <p class="text-xs text-slate-500 mb-3">Hiệu quả phối hợp sư phạm giữa Đoàn trường và Giáo viên chủ nhiệm.</p>
+              <button onclick="showToast('Báo cáo tổng hợp cảnh báo đang được đồng bộ theo kỳ', 'info')" class="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg transition text-center">Xem tổng hợp</button>
+            </div>
+
+          </div>
+
+          <h3 class="font-bold text-slate-900 text-sm mb-3">Lịch sử xuất báo cáo gần đây</h3>
+          <div class="overflow-x-auto rounded-xl border border-slate-200/70">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3">Tiêu đề báo cáo</th>
+                  <th class="py-2.5 px-3">Loại báo cáo</th>
+                  <th class="py-2.5 px-3">Định dạng</th>
+                  <th class="py-2.5 px-3">Người xuất</th>
+                  <th class="py-2.5 px-3">Thời điểm</th>
+                </tr>
+              </thead>
+              <tbody id="reports-history-tbody" class="divide-y divide-slate-100">
+                <tr><td colspan="5" class="text-center py-4 text-slate-400">Đang tải lịch sử...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TAB 7: ADMIN USER & ROLE APPROVAL MANAGEMENT (CHỈ ADMIN MỚI CÓ QUYỀN) -->
+      <section id="tab-users" class="tab-pane hidden space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold text-slate-900">Quản lý Tài khoản & Phê duyệt Chức vụ</h2>
+                <span class="badge bg-purple-100 text-purple-800 border border-purple-200">Chỉ Quản trị viên (Admin)</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Chỉ có Quản trị viên hệ thống mới có quyền phê duyệt chức vụ, cấp quyền xác minh và quyền truy cập hồ sơ tâm lý.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="text" id="filter-user-search" oninput="filterUsersList(this.value)" placeholder="Tìm tài khoản, họ tên..." class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:ring-1 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200/70">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-3">Họ và tên</th>
+                  <th class="py-3 px-3">Tên đăng nhập</th>
+                  <th class="py-3 px-3">Chức vụ / Vai trò hiện tại</th>
+                  <th class="py-3 px-3 text-center">Xác minh vi phạm</th>
+                  <th class="py-3 px-3 text-center">Xem tư vấn tâm lý</th>
+                  <th class="py-3 px-3 text-center">Trạng thái</th>
+                  <th class="py-3 px-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="user-management-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr><td colspan="7" class="text-center py-8 text-slate-400">Đang tải danh sách người dùng...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-4 p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-xs text-brand-900 flex items-start gap-2.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-brand-600 shrink-0 mt-0.5"></i>
+            <div>
+              <b>Chính sách kiểm soát quyền lực chặt chẽ (RBAC):</b>
+              Người dùng thông thường không có quyền tự chọn vai trò. Mọi thay đổi về chức vụ hoặc cấp quyền chuyên biệt (như xem tâm sự học sinh) bắt buộc phải do Admin phê duyệt và được ghi nhận nhật ký Audit Log.
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TAB 8: SETTINGS & AUDIT LOGS -->
+      <section id="tab-settings" class="tab-pane hidden space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Cấu hình hệ thống & Nhật ký hoạt động</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Dành cho Quản trị viên quản lý tham số, bảo mật và sao lưu dữ liệu</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="triggerSeedMockData()" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-brand-700 font-semibold text-xs rounded-xl flex items-center space-x-1 transition">
+                <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                <span>Nạp dữ liệu mẫu</span>
+              </button>
+              <button onclick="confirmResetMockData()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs rounded-xl flex items-center space-x-1 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Xóa dữ liệu thử nghiệm</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- System Settings Form -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50/70 rounded-xl border border-slate-200/60 mb-6">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Tên trường chính thức</label>
+              <input type="text" readonly value="TRƯỜNG THPT HƯƠNG KHÊ – HÀ TĨNH" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Thông điệp hệ thống</label>
+              <input type="text" readonly value="Kỷ cương số – Thi đua minh bạch – Đồng hành cùng học sinh" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Điểm khởi đầu mỗi kỳ thi đua</label>
+              <input type="number" readonly value="100.0" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Môi trường triển khai</label>
+              <input type="text" readonly value="Development / Production Ready (SQLite -> PostgreSQL)" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-emerald-700 font-medium">
+            </div>
+          </div>
+
+          <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-1.5">
+            <i data-lucide="file-clock" class="w-4 h-4 text-brand-600"></i>
+            <span>Nhật ký thao tác hệ thống (Audit Logs)</span>
+          </h3>
+          <p class="text-xs text-slate-500 mb-3">Lưu trữ toàn bộ hành động tạo, xác minh, điều chỉnh điểm, xuất file và đăng nhập (Không lưu mật khẩu hoặc nội dung tâm sự nhạy cảm).</p>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200/70 max-h-96">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-700 font-semibold uppercase text-[10px] tracking-wider sticky top-0 border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3">Thời điểm</th>
+                  <th class="py-2.5 px-3">Người dùng</th>
+                  <th class="py-2.5 px-3">Hành động</th>
+                  <th class="py-2.5 px-3">Loại đối tượng</th>
+                  <th class="py-2.5 px-3">Mã đối tượng</th>
+                  <th class="py-2.5 px-3">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody id="settings-audit-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr><td colspan="6" class="text-center py-6 text-slate-400">Đang tải nhật ký...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODALS -->
+  <!-- ========================================== -->
+
+  <!-- MODAL: ADMIN DUYỆT CHỨC VỤ VÀ PHÂN QUYỀN (ADMIN ONLY) -->
+  <div id="modal-approve-role" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col text-xs">
+      <div class="px-5 py-3.5 bg-purple-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="user-cog" class="w-4 h-4 text-purple-300"></i>
+          <h3 class="font-bold">Duyệt chức vụ & Cấp quyền người dùng</h3>
+        </div>
+        <button onclick="closeApproveRoleModal()" class="text-purple-200 hover:text-white">&times;</button>
+      </div>
+
+      <form id="approve-role-form" onsubmit="handleApproveRoleSubmit(event)" class="p-5 space-y-4">
+        <input type="hidden" id="approve-user-id">
+
+        <div class="p-3 bg-purple-50/70 rounded-xl border border-purple-100 space-y-1">
+          <div>Người dùng: <b id="approve-modal-fullname" class="text-slate-900">Nguyen Van A</b></div>
+          <div>Tên đăng nhập: <span id="approve-modal-username" class="font-mono text-purple-800">username</span></div>
+          <div>Chức vụ hiện tại: <span id="approve-modal-current-role" class="badge bg-slate-200 text-slate-800">Học sinh</span></div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Chức vụ / Vai trò được Admin duyệt <span class="text-rose-500">*</span></label>
+          <select id="approve-role-select" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-purple-500">
+            <option value="ADMIN">1. Quản trị viên hệ thống (Admin)</option>
+            <option value="BGH">2. Ban Giám hiệu (BGH)</option>
+            <option value="DOAN_TRUONG">3. Đoàn trường</option>
+            <option value="SAO_DO">4. Đội Sao đỏ / Trực tuần</option>
+            <option value="GVCN">5. Giáo viên chủ nhiệm (GVCN)</option>
+            <option value="GVBM">6. Giáo viên bộ môn (GVBM)</option>
+            <option value="HOC_SINH">7. Học sinh</option>
+            <option value="CHUYEN_VIEN_TAM_LY">8. Chuyên viên tư vấn tâm lý</option>
+          </select>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+          <span class="block font-semibold text-slate-800">Quyền hạn chuyên biệt:</span>
+          
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="approve-can-verify" class="rounded text-purple-600 focus:ring-purple-500">
+            <span class="text-slate-700 font-medium">Quyền xác minh vi phạm nền nếp (Đoàn trường, Admin)</span>
+          </label>
+
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="approve-can-counseling" class="rounded text-purple-600 focus:ring-purple-500">
+            <span class="text-slate-700 font-medium">Quyền truy cập hồ sơ tư vấn tâm lý nhạy cảm (Góc sẻ chia)</span>
+          </label>
+
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="approve-is-active" class="rounded text-purple-600 focus:ring-purple-500" checked>
+            <span class="text-slate-700 font-medium">Kích hoạt tài khoản (Cho phép đăng nhập)</span>
+          </label>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeApproveRoleModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl shadow-sm">Lưu phê duyệt chức vụ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: QUICK RECORD VIOLATION (SAO ĐỎ & GV) -->
+  <div id="modal-quick-violation" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <div class="px-6 py-4 bg-brand-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-yellow-300"></i>
+          <h3 class="font-bold text-sm">Ghi nhận vi phạm nền nếp nhanh</h3>
+        </div>
+        <button onclick="closeQuickViolationModal()" class="text-blue-200 hover:text-white">&times;</button>
+      </div>
+
+      <form id="quick-violation-form" onsubmit="handleQuickViolationSubmit(event)" class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">1. Lớp học vi phạm <span class="text-rose-500">*</span></label>
+          <select id="modal-violation-class" required onchange="handleClassChangeForStudents(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-brand-500">
+            <option value="">-- Chọn lớp học --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">2. Học sinh (hoặc Tập thể)</label>
+          <select id="modal-violation-student" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-brand-500">
+            <option value="">-- Cả tập thể lớp --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">3. Lỗi vi phạm nội quy <span class="text-rose-500">*</span></label>
+          <select id="modal-violation-rule" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-brand-500">
+            <option value="">-- Chọn lỗi vi phạm --</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">4. Vị trí ghi nhận</label>
+            <input type="text" id="modal-violation-location" value="Cổng chính trường THPT Hương Khê" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Thời điểm</label>
+            <input type="datetime-local" id="modal-violation-time" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mô tả chi tiết sự việc</label>
+          <textarea id="modal-violation-desc" rows="2" placeholder="Ghi chú cụ thể hoàn cảnh diễn ra..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Đính kèm ảnh minh chứng (Tùy chọn)</label>
+          <input type="file" id="modal-violation-file" accept="image/*" class="w-full text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-700 hover:file:bg-blue-100">
+          <p class="text-[10px] text-slate-400 mt-1">Ảnh được lưu trữ an toàn, không hiển thị công khai trên bảng xếp hạng.</p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeQuickViolationModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-sm">Gửi bản ghi để xác minh</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: VERIFY VIOLATION -->
+  <div id="modal-verify-violation" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col text-xs">
+      <div class="px-5 py-3.5 bg-brand-900 text-white flex items-center justify-between">
+        <h3 class="font-bold">Xác minh bản ghi vi phạm nền nếp</h3>
+        <button onclick="closeVerifyModal()" class="text-blue-200 hover:text-white">&times;</button>
+      </div>
+
+      <form id="verify-violation-form" onsubmit="handleVerifySubmit(event)" class="p-5 space-y-4">
+        <input type="hidden" id="verify-violation-id">
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+          <div>Mã: <b id="verify-modal-code">VP-xxx</b></div>
+          <div>Đối tượng: <b id="verify-modal-target">Nguyễn Văn Nam (10A1)</b></div>
+          <div>Lỗi: <span id="verify-modal-rule" class="text-rose-600 font-semibold">Đi học muộn</span></div>
+          <div class="text-slate-500" id="verify-modal-desc">Mô tả...</div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Quyết định thẩm định <span class="text-rose-500">*</span></label>
+          <select id="verify-status-select" required onchange="handleVerifyStatusChange(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium">
+            <option value="VERIFIED">Đã xác minh (Áp dụng trừ điểm thi đua)</option>
+            <option value="REJECTED">Không đủ căn cứ (Bác bỏ vi phạm, 0đ trừ)</option>
+            <option value="ADJUSTED">Đã điều chỉnh (Điều chỉnh mức điểm trừ)</option>
+          </select>
+        </div>
+
+        <div id="verify-points-wrapper">
+          <label class="block font-semibold text-slate-700 mb-1">Điểm trừ áp dụng cho Chi đoàn</label>
+          <input type="number" step="0.5" id="verify-points-input" value="2.0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Ý kiến xác minh & Lý do quyết định</label>
+          <textarea id="verify-notes-input" rows="2" placeholder="Ghi rõ lý do chấp thuận hoặc điều chỉnh..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeVerifyModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-sm">Lưu quyết định xác minh</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: APPEAL VIOLATION -->
+  <div id="modal-appeal-violation" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden text-xs">
+      <div class="px-5 py-3.5 bg-amber-600 text-white flex items-center justify-between">
+        <h3 class="font-bold">Gửi giải trình / Khiếu nại bản ghi vi phạm</h3>
+        <button onclick="closeAppealModal()" class="text-amber-200 hover:text-white">&times;</button>
+      </div>
+
+      <form id="appeal-violation-form" onsubmit="handleAppealSubmit(event)" class="p-5 space-y-4">
+        <input type="hidden" id="appeal-violation-id">
+
+        <p class="text-slate-600 leading-relaxed">
+          Nếu có lý do chính đáng hoặc sự nhầm lẫn trong việc ghi nhận, học sinh hoặc GVCN có thể gửi giải trình kèm minh chứng để Đoàn trường xem xét lại.
+        </p>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Lý do giải trình cụ thể <span class="text-rose-500">*</span></label>
+          <textarea id="appeal-reason-input" required rows="4" placeholder="Trình bày rõ ràng lý do, thời điểm, người làm chứng hoặc sự việc khách quan..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeAppealModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-sm">Gửi giải trình đến Đoàn trường</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: GVCN INTERVENTION -->
+  <div id="modal-gvcn-intervention" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden text-xs">
+      <div class="px-5 py-3.5 bg-purple-700 text-white flex items-center justify-between">
+        <h3 class="font-bold">Ghi nhận can thiệp & Hỗ trợ học sinh (GVCN)</h3>
+        <button onclick="closeInterventionModal()" class="text-purple-200 hover:text-white">&times;</button>
+      </div>
+
+      <form id="intervention-form" onsubmit="handleInterventionSubmit(event)" class="p-5 space-y-4">
+        <input type="hidden" id="intervention-alert-id">
+
+        <div class="p-3 bg-purple-50 rounded-xl border border-purple-100">
+          <div class="font-bold text-purple-900" id="intervention-alert-title">Tiêu đề cảnh báo</div>
+          <div class="text-[11px] text-purple-700 mt-1" id="intervention-alert-details">Chi tiết...</div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Biện pháp sư phạm đã thực hiện <span class="text-rose-500">*</span></label>
+          <textarea id="intervention-action-input" required rows="3" placeholder="VD: Gặp trao đổi riêng tìm hiểu hoàn cảnh, liên hệ phụ huynh nhắc nhở, phân công bạn hỗ trợ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Kết quả ghi nhận / Đánh giá chuyển biến</label>
+          <textarea id="intervention-outcome-input" rows="2" placeholder="Học sinh đã cam kết, có chuyển biến tốt..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tình trạng hỗ trợ</label>
+          <select id="intervention-status-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium">
+            <option value="COMPLETED">Đã hoàn thành hỗ trợ (Đóng cảnh báo)</option>
+            <option value="IN_PROGRESS">Đang theo dõi thêm (Tiếp tục xử lý)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeInterventionModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl shadow-sm">Lưu nhật ký hỗ trợ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD BONUS POINTS FOR YOUTH UNION (ĐOÀN TRƯỜNG) -->
+  <div id="modal-bonus-points" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl border border-slate-200 overflow-hidden text-xs">
+      <div class="px-5 py-3.5 bg-brand-900 text-white flex items-center justify-between">
+        <h3 class="font-bold">Cộng điểm phong trào Chi đoàn</h3>
+        <button onclick="closeBonusModal()" class="text-blue-200 hover:text-white">&times;</button>
+      </div>
+
+      <form id="bonus-points-form" onsubmit="handleBonusSubmit(event)" class="p-5 space-y-4">
+        <input type="hidden" id="bonus-score-id">
+        <div>
+          <span class="text-slate-500">Chi đoàn:</span> <b id="bonus-class-name">10A1</b>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Số điểm cộng (+đ) <span class="text-rose-500">*</span></label>
+          <input type="number" step="0.5" id="bonus-points-val" value="2.0" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nội dung hoạt động được khen thưởng</label>
+          <textarea id="bonus-notes-val" rows="2" placeholder="VD: Tham gia dọn vệ sinh đài tưởng niệm, văn nghệ..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+        </div>
+        <div class="flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeBonusModal()" class="px-3 py-1.5 border border-slate-200 rounded-lg">Hủy</button>
+          <button type="submit" class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg shadow-sm">Cộng điểm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: VIOLATION DETAIL & AUDIT TIMELINE -->
+  <div id="modal-violation-detail" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] text-xs">
+      <div class="px-5 py-3.5 bg-brand-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-blue-300"></i>
+          <h3 class="font-bold">Chi tiết bản ghi vi phạm nền nếp</h3>
+        </div>
+        <button onclick="closeViolationDetailModal()" class="text-blue-200 hover:text-white">&times;</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <!-- Header row -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <div class="font-mono font-bold text-sm text-slate-800" id="detail-code">VP-20261015-0001</div>
+            <div class="text-[11px] text-slate-400" id="detail-time">15/10/2026 07:15</div>
+          </div>
+          <div id="detail-status-badge"></div>
+        </div>
+
+        <!-- Target info -->
+        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px] block">Lớp vi phạm</span>
+            <b class="text-slate-800" id="detail-class">10A1</b>
+          </div>
+          <div>
+            <span class="text-slate-400 text-[10px] block">Học sinh / Đối tượng</span>
+            <b class="text-slate-800" id="detail-student">Nguyễn Văn Nam</b>
+          </div>
+          <div>
+            <span class="text-slate-400 text-[10px] block">Lỗi vi phạm</span>
+            <span class="font-semibold text-rose-600" id="detail-rule">Đi học muộn</span>
+          </div>
+          <div>
+            <span class="text-slate-400 text-[10px] block">Điểm trừ áp dụng</span>
+            <b class="font-mono text-rose-600" id="detail-points">-2.0đ</b>
+          </div>
+        </div>
+
+        <!-- Location & description -->
+        <div class="space-y-1">
+          <span class="text-slate-500 font-semibold block">Vị trí & Hoàn cảnh sự việc:</span>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700 leading-relaxed" id="detail-desc">
+            Không có mô tả chi tiết.
+          </div>
+        </div>
+
+        <!-- Evidence Image -->
+        <div id="detail-evidence-container" class="space-y-1 hidden">
+          <span class="text-slate-500 font-semibold block">Ảnh minh chứng:</span>
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-100 text-center">
+            <img id="detail-evidence-img" src="" alt="Minh chứng" class="max-h-48 rounded-lg mx-auto shadow-sm object-cover">
+          </div>
+        </div>
+
+        <!-- Verification info -->
+        <div id="detail-verification-box" class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl space-y-1 hidden">
+          <span class="font-bold text-emerald-900 block">Kết quả xác minh (Đoàn trường):</span>
+          <div class="text-emerald-800 text-[11px]" id="detail-verification-notes">Ý kiến xác minh...</div>
+          <div class="text-[10px] text-emerald-600 font-mono" id="detail-verification-meta">Xác minh lúc...</div>
+        </div>
+
+        <!-- Appeal info -->
+        <div id="detail-appeal-box" class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1 hidden">
+          <span class="font-bold text-amber-900 block">Nội dung khiếu nại / Giải trình:</span>
+          <div class="text-amber-800 text-[11px]" id="detail-appeal-reason">Lý do giải trình...</div>
+          <div class="text-[10px] text-amber-600 font-mono" id="detail-appeal-meta">Gửi lúc...</div>
+        </div>
+
+        <!-- Review Timeline -->
+        <div id="detail-timeline-container" class="space-y-2 pt-2 border-t border-slate-100">
+          <span class="text-slate-500 font-semibold block text-[11px] uppercase tracking-wider">Lịch sử thẩm tra & điều chỉnh:</span>
+          <div id="detail-timeline-list" class="space-y-1.5 font-mono text-[11px]"></div>
+        </div>
+
+      </div>
+
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+        <button onclick="closeViolationDetailModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION (CHO ĐIỆN THOẠI) -->
+  <!-- ========================================== -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 flex justify-around items-center py-2 px-1 shadow-2xl">
+    <button onclick="navigateTab('dashboard')" class="flex flex-col items-center text-slate-500 hover:text-brand-900 focus:text-brand-900 text-[10px] font-medium">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Tổng quan</span>
+    </button>
+    <button onclick="navigateTab('conduct')" class="flex flex-col items-center text-slate-500 hover:text-brand-900 focus:text-brand-900 text-[10px] font-medium">
+      <i data-lucide="clipboard-list" class="w-5 h-5 mb-0.5"></i>
+      <span>Nền nếp</span>
+    </button>
+    <button onclick="navigateTab('competition')" class="flex flex-col items-center text-slate-500 hover:text-brand-900 focus:text-brand-900 text-[10px] font-medium">
+      <i data-lucide="award" class="w-5 h-5 mb-0.5"></i>
+      <span>Thi đua</span>
+    </button>
+    <button onclick="navigateTab('counseling')" class="flex flex-col items-center text-rose-600 hover:text-rose-700 focus:text-rose-700 text-[10px] font-semibold">
+      <i data-lucide="heart-handshake" class="w-5 h-5 mb-0.5"></i>
+      <span>Góc sẻ chia</span>
+    </button>
+    <button onclick="toggleMobileMenu()" class="flex flex-col items-center text-slate-500 hover:text-brand-900 focus:text-brand-900 text-[10px] font-medium">
+      <i data-lucide="menu" class="w-5 h-5 mb-0.5"></i>
+      <span>Thêm</span>
+    </button>
+  </nav>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-16 sm:bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- LOAD APP SCRIPT -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hk_student_hub_db
+    environment:
+      POSTGRES_DB: hk_student_hub_db
+      POSTGRES_USER: hk_hub_user
+      POSTGRES_PASSWORD: hk_hub_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hk_hub_user -d hk_student_hub_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: hk_student_hub_web
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_hk_data &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 hk_hub_project.wsgi:application"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_DEBUG=False
+      - DJANGO_SECRET_KEY=huong-khe-production-super-secret-key-change-me-in-production-2026
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=hk_student_hub_db
+      - DB_USER=hk_hub_user
+      - DB_PASSWORD=hk_hub_secure_password
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
