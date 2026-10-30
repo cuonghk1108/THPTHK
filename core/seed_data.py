@@ -1,5 +1,10 @@
 from datetime import date, timedelta
 from decimal import Decimal
+import secrets
+from django.apps import apps
+from django.conf import settings
+from django.core.management.base import CommandError
+from django.db import transaction
 from django.utils import timezone
 from core.models import User, AcademicYear, Semester, SystemSetting, AuditLog
 from conduct.models import SchoolClass, Student, Teacher, ConductRuleCategory, ConductRule, ViolationRecord, ViolationReviewHistory
@@ -8,7 +13,7 @@ from alerts.models import EarlyWarningRule, EarlyWarningAlert, HomeroomIntervent
 from counseling.models import CounselingRequest, CounselingPrivateNote
 
 
-def seed_system_data():
+def _seed_system_data():
     """
     Khởi tạo dữ liệu nền tảng và dữ liệu mẫu thực nghiệm cho TRƯỜNG THPT HƯƠNG KHÊ – HÀ TĨNH.
     Dữ liệu được đánh dấu là DỮ LIỆU THỬ NGHIỆM PHỤC VỤ NGHIỆM THU.
@@ -46,7 +51,27 @@ def seed_system_data():
         defaults={'value': '100.0', 'description': 'Điểm khởi đầu mỗi kỳ thi đua tuần'}
     )
 
-    # 2. Tạo các tài khoản mẫu cho đầy đủ 7 vai trò
+    # 2. Tạo các tài khoản mẫu cho đầy đủ các vai trò
+    # Super Admin
+    super_admin, _ = User.objects.get_or_create(
+        username='superadmin_hk',
+        defaults={
+            'full_name': 'Ban Giám Hiệu - THPT Hương Khê',
+            'email': 'superadmin@thpthuongkhe.edu.vn',
+            'role': User.ROLE_SUPER_ADMIN,
+            'is_staff': True,
+            'is_superuser': True,
+            'can_verify_violations': True,
+            'can_view_counseling': True,
+            'account_status': User.STATUS_APPROVED,
+            'is_active': True,
+        }
+    )
+    super_admin.set_password('super_secure_pass_2026')
+    super_admin.account_status = User.STATUS_APPROVED
+    super_admin.is_active = True
+    super_admin.save()
+
     # A. Admin
     admin_user, _ = User.objects.get_or_create(
         username='admin',
@@ -85,10 +110,12 @@ def seed_system_data():
             'email': 'doantruong@thpthuongkhe.edu.vn',
             'role': User.ROLE_DOAN_TRUONG,
             'is_staff': True,
-            'can_verify_violations': True
+            'can_verify_violations': False
         }
     )
     doan_user.set_password('doan_password_2026')
+    doan_user.can_verify_violations = False
+    doan_user.can_view_counseling = False
     doan_user.save()
 
     # D. Giáo viên chủ nhiệm
@@ -169,20 +196,60 @@ def seed_system_data():
     tamly_user.set_password('tamly_password_2026')
     tamly_user.save()
 
-    # 3. Lớp học và Chi đoàn THPT Hương Khê
-    classes_data = [
-        ('10A1', 10, gvcn_10a1, 42, 'P.101 - Nhà A'),
-        ('10A2', 10, None, 40, 'P.102 - Nhà A'),
-        ('10A3', 10, None, 41, 'P.103 - Nhà A'),
-        ('11A1', 11, None, 39, 'P.201 - Nhà B'),
-        ('11A2', 11, gvcn_11a2, 43, 'P.202 - Nhà B'),
-        ('11A3', 11, None, 40, 'P.203 - Nhà B'),
-        ('12A1', 12, None, 38, 'P.301 - Nhà C'),
-        ('12A2', 12, None, 41, 'P.302 - Nhà C'),
-        ('12A3', 12, None, 39, 'P.303 - Nhà C'),
-    ]
+    # Đảm bảo các tài khoản mẫu chính thức đều ở trạng thái APPROVED
+    for u in [admin_user, bgh_user, doan_user, gvcn_10a1, gvcn_11a2, gvbm_user, saodo_user, student_user, tamly_user]:
+        u.account_status = User.STATUS_APPROVED
+        u.is_active = True
+        u.save(update_fields=['account_status', 'is_active'])
+
+    # I. Tài khoản mẫu đang chờ duyệt (Pending registrations để thử nghiệm Admin review)
+    pending_user1, _ = User.objects.get_or_create(
+        username='hocsinh.quocanh',
+        defaults={
+            'full_name': 'Lê Quốc Anh',
+            'email': 'quocanh.hk261045@thpthuongkhe.edu.vn',
+            'phone': '0912345678',
+            'role': User.ROLE_HOC_SINH,
+            'requested_role': 'HOC_SINH',
+            'department_or_class': 'Lớp 10A3',
+            'verification_info': 'Học sinh mới chuyển trường từ THPT Phúc Trạch, mã HS: HK-2026-045',
+            'account_status': User.STATUS_PENDING,
+            'is_active': False
+        }
+    )
+    pending_user1.set_password('quocanh_password_2026')
+    pending_user1.save()
+
+    pending_user2, _ = User.objects.get_or_create(
+        username='gv.nguyenhoa',
+        defaults={
+            'full_name': 'Cô Nguyễn Thị Hoa',
+            'email': 'hoa.nguvan@thpthuongkhe.edu.vn',
+            'phone': '0987654321',
+            'role': User.ROLE_GVBM,
+            'requested_role': 'GVBM',
+            'department_or_class': 'Tổ Ngữ Văn',
+            'verification_info': 'Giáo viên hợp đồng bộ môn Ngữ Văn năm học 2026-2027',
+            'account_status': User.STATUS_PENDING,
+            'is_active': False
+        }
+    )
+    pending_user2.set_password('hoa_password_2026')
+    pending_user2.save()
+
+    # 3. Lớp học và Chi đoàn THPT Hương Khê (Chính xác 64 lớp: 22 lớp K10, 21 lớp K11, 21 lớp K12)
     created_classes = {}
-    for name, grade, teacher, cnt, room in classes_data:
+    target_classes = []
+    for i in range(1, 23):
+        teacher = gvcn_10a1 if i == 1 else None
+        target_classes.append((f"10A{i}", 10, teacher, 40, f"Phòng học 10A{i}"))
+    for i in range(1, 22):
+        teacher = gvcn_11a2 if i == 2 else None
+        target_classes.append((f"11A{i}", 11, teacher, 40, f"Phòng học 11A{i}"))
+    for i in range(1, 22):
+        target_classes.append((f"12A{i}", 12, None, 40, f"Phòng học 12A{i}"))
+
+    for name, grade, teacher, cnt, room in target_classes:
         cls_obj, _ = SchoolClass.objects.get_or_create(
             name=name,
             academic_year=year,
@@ -191,10 +258,49 @@ def seed_system_data():
                 'homeroom_teacher': teacher,
                 'student_count': cnt,
                 'room_number': room,
+                'is_active': True,
                 'union_branch_name': f"Chi đoàn {name}"
             }
         )
         created_classes[name] = cls_obj
+
+    # Khởi tạo bản ghi phân công GVCN mẫu
+    from conduct.models import HomeroomAssignment, TeacherClassAssignment
+    if gvcn_10a1 and '10A1' in created_classes:
+        HomeroomAssignment.objects.get_or_create(
+            teacher=gvcn_10a1,
+            school_class=created_classes['10A1'],
+            defaults={'assigned_by': admin_user, 'is_active': True, 'notes': 'Phân công chủ nhiệm đầu năm học 2026-2027'}
+        )
+    if gvcn_11a2 and '11A2' in created_classes:
+        HomeroomAssignment.objects.get_or_create(
+            teacher=gvcn_11a2,
+            school_class=created_classes['11A2'],
+            defaults={'assigned_by': admin_user, 'is_active': True, 'notes': 'Phân công chủ nhiệm đầu năm học 2026-2027'}
+        )
+
+    # Phân công giảng dạy mẫu cho giáo viên bộ môn
+    if gvbm_user and '10A1' in created_classes:
+        TeacherClassAssignment.objects.get_or_create(
+            teacher=gvbm_user,
+            school_class=created_classes['10A1'],
+            subject='Toán',
+            defaults={'assigned_by': admin_user, 'is_active': True}
+        )
+    if gvbm_user and '10A2' in created_classes:
+        TeacherClassAssignment.objects.get_or_create(
+            teacher=gvbm_user,
+            school_class=created_classes['10A2'],
+            subject='Toán',
+            defaults={'assigned_by': admin_user, 'is_active': True}
+        )
+    if gvbm_user and '11A1' in created_classes:
+        TeacherClassAssignment.objects.get_or_create(
+            teacher=gvbm_user,
+            school_class=created_classes['11A1'],
+            subject='Toán',
+            defaults={'assigned_by': admin_user, 'is_active': True}
+        )
 
     # 4. Học sinh mẫu
     s_nam, _ = Student.objects.get_or_create(
@@ -314,23 +420,30 @@ def seed_system_data():
         }
     )
 
-    # 7. Kỳ thi đua: Tuần 7 (Hiện tại)
-    today = timezone.now().date()
-    start_week = today - timedelta(days=today.weekday()) # Thứ 2
-    end_week = start_week + timedelta(days=6) # Chủ nhật
-    period, _ = CompetitionPeriod.objects.get_or_create(
-        name='Tuần 7 - Học kỳ I (2026-2027)',
-        defaults={
-            'period_type': CompetitionPeriod.TYPE_WEEK,
-            'week_number': 7,
-            'academic_year': year,
-            'semester': semester,
-            'start_date': start_week,
-            'end_date': end_week,
-            'is_locked': False,
-            'is_published': True
-        }
-    )
+    # 7. Khởi tạo chuẩn 35 tuần học (18 tuần HK I + 17 tuần HK II) và các kỳ tháng, học kỳ
+    from competition.services import init_standard_35_weeks_schedule
+    init_standard_35_weeks_schedule(year)
+
+    # Đánh dấu chốt kết quả Tuần 6 và Tháng 9 làm mẫu
+    period_w6 = CompetitionPeriod.objects.filter(academic_year=year, period_type=CompetitionPeriod.TYPE_WEEK, week_number=6).first()
+    if period_w6:
+        period_w6.is_locked = True
+        period_w6.locked_at = timezone.now() - timedelta(days=6)
+        period_w6.locked_by = admin_user
+        period_w6.save()
+
+    period = CompetitionPeriod.objects.filter(academic_year=year, period_type=CompetitionPeriod.TYPE_WEEK, week_number=7).first()
+    period_w8 = CompetitionPeriod.objects.filter(academic_year=year, period_type=CompetitionPeriod.TYPE_WEEK, week_number=8).first()
+
+    period_m9 = CompetitionPeriod.objects.filter(academic_year=year, period_type=CompetitionPeriod.TYPE_MONTH, month_number=9).first()
+    if period_m9:
+        period_m9.is_locked = True
+        period_m9.locked_at = timezone.now() - timedelta(days=17)
+        period_m9.locked_by = admin_user
+        period_m9.save()
+
+    period_m10 = CompetitionPeriod.objects.filter(academic_year=year, period_type=CompetitionPeriod.TYPE_MONTH, month_number=10).first()
+    period_sem1 = CompetitionPeriod.objects.filter(academic_year=year, period_type=CompetitionPeriod.TYPE_SEMESTER, semester__semester_number=1).first()
 
     # 8. Cấu hình quy tắc cảnh báo sớm
     EarlyWarningRule.objects.get_or_create(
@@ -453,18 +566,19 @@ def seed_system_data():
         }
     )
 
-    # 10. Tính toán bảng điểm thi đua
+    # 10. Tính toán bảng điểm thi đua cho tất cả các kỳ
     from competition.services import recalculate_period_scores
-    recalculate_period_scores(period)
+    for p in [period_w6, period, period_w8, period_m9, period_m10, period_sem1]:
+        recalculate_period_scores(p, force=True)
 
-    # Đoàn trường cộng điểm phong trào cho 12A1
+    # Đoàn trường cộng điểm phong trào cho 12A1 trong tuần 7
     score_12a1 = ClassCompetitionScore.objects.filter(competition_period=period, school_class=created_classes['12A1']).first()
     if score_12a1:
         score_12a1.bonus_points = Decimal('5.00')
         score_12a1.bonus_notes = "+5đ: Đạt giải Nhất cuộc thi Văn nghệ chào mừng năm học mới"
         score_12a1.calculate_total()
         score_12a1.save()
-        recalculate_period_scores(period)
+        recalculate_period_scores(period, force=True)
 
     # 11. Đánh giá cảnh báo sớm cho s_nam
     from alerts.services import evaluate_alerts_for_student
@@ -491,8 +605,107 @@ def seed_system_data():
     print("=> Seed du lieu mau he thong HK Student Hub hoan tat thanh cong!")
 
 
+def seed_system_data():
+    if not settings.DEBUG:
+        raise CommandError('Không cho phép nạp dữ liệu mẫu mặc định khi DEBUG=False. Hãy dùng --production-safe.')
+    with transaction.atomic():
+        _seed_system_data()
+
+
+@transaction.atomic
+def seed_production_demo_data():
+    if settings.DEBUG:
+        raise CommandError('Chế độ production-safe chỉ được chạy khi DEBUG=False.')
+
+    project_models = [
+        model for model in apps.get_models()
+        if model._meta.app_label in {'core', 'conduct', 'competition', 'alerts', 'counseling'}
+        and not model._meta.auto_created
+    ]
+    populated_models = [model.__name__ for model in project_models if model.objects.exists()]
+    if populated_models:
+        raise CommandError(
+            'Từ chối seed production vì cơ sở dữ liệu không trống: '
+            + ', '.join(populated_models)
+        )
+
+    _seed_system_data()
+
+    users = list(User.objects.order_by('id'))
+    bootstrap_admin = User.objects.get(username='admin')
+    temporary_password = secrets.token_urlsafe(32)
+    for index, user in enumerate(users, start=1):
+        is_bootstrap_admin = user.pk == bootstrap_admin.pk
+        if not is_bootstrap_admin:
+            user.username = f'sample-user-{user.pk}'
+            user.full_name = f'Người dùng mẫu {index}'
+            user.email = f'sample-user-{index}@invalid.example'
+            user.phone = ''
+        else:
+            user.full_name = 'Quản trị viên mẫu'
+            user.email = 'bootstrap-admin@invalid.example'
+            user.phone = ''
+
+        user.set_password(temporary_password if is_bootstrap_admin else secrets.token_urlsafe(32))
+        user.is_active = is_bootstrap_admin
+        user.is_staff = is_bootstrap_admin
+        user.is_superuser = is_bootstrap_admin
+        user.can_verify_violations = is_bootstrap_admin
+        user.can_view_counseling = False
+        user.must_change_password = is_bootstrap_admin
+        user.save()
+
+    for index, student in enumerate(Student.objects.order_by('id'), start=1):
+        student.student_code = f'SAMPLE-{index:04d}'
+        student.full_name = f'Học sinh mẫu {index}'
+        student.date_of_birth = date(2009, 1, 1)
+        student.parent_name = ''
+        student.parent_phone = ''
+        student.address = ''
+        student.save(update_fields=[
+            'student_code', 'full_name', 'date_of_birth',
+            'parent_name', 'parent_phone', 'address',
+        ])
+
+    for index, teacher in enumerate(Teacher.objects.order_by('id'), start=1):
+        teacher.teacher_code = f'SAMPLE-T-{index:04d}'
+        teacher.full_name = f'Giáo viên mẫu {index}'
+        teacher.subject = 'Môn học mẫu'
+        teacher.phone = ''
+        teacher.save(update_fields=['teacher_code', 'full_name', 'subject', 'phone'])
+
+    ViolationReviewHistory.objects.all().delete()
+    ViolationRecord.objects.all().update(
+        student_name_snapshot='Học sinh mẫu',
+        location='Khu vực mẫu',
+        description='Bản ghi minh họa không chứa thông tin cá nhân.',
+        evidence_notes='',
+        verification_notes='',
+        appeal_reason='',
+    )
+    EarlyWarningAlert.objects.all().update(
+        alert_title='Cảnh báo mẫu',
+        details='Dữ liệu minh họa đã được ẩn danh.',
+    )
+    HomeroomIntervention.objects.all().update(
+        action_taken='Biện pháp hỗ trợ minh họa.',
+        outcome='Kết quả minh họa.',
+    )
+    ClassCompetitionScore.objects.all().update(
+        bonus_notes='',
+        notes='',
+    )
+
+    CounselingPrivateNote.objects.all().delete()
+    CounselingRequest.objects.all().delete()
+    AuditLog.objects.all().delete()
+    return temporary_password
+
+
 def clean_mock_data():
     """Xóa dữ liệu thử nghiệm, đưa hệ thống về trạng thái ban đầu an toàn"""
+    if not settings.DEBUG:
+        raise CommandError('Không cho phép xóa dữ liệu bằng --clean khi DEBUG=False.')
     ViolationReviewHistory.objects.all().delete()
     ViolationRecord.objects.all().delete()
     ClassCompetitionScore.objects.all().delete()

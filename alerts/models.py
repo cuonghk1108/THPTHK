@@ -77,6 +77,11 @@ class EarlyWarningAlert(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Cảnh báo sớm nền nếp'
         verbose_name_plural = 'Danh sách cảnh báo sớm'
+        indexes = [
+            models.Index(fields=['status', '-created_at'], name='idx_alert_status_created'),
+            models.Index(fields=['school_class', 'status'], name='idx_alert_class_status'),
+            models.Index(fields=['student', 'status'], name='idx_alert_student_status'),
+        ]
 
     def __str__(self):
         target = self.student.full_name if self.student else f"Lớp {self.school_class.name}"

@@ -41,23 +41,50 @@ Hệ thống thiết lập hàng rào bảo mật nghiêm ngặt theo đúng ngu
 
 ---
 
-## 4. DANH SÁCH TÀI KHOẢN MẪU ĐỂ ĐĂNG NHẬP KIỂM THỬ
+## 4. TÀI KHOẢN VÀ ĐỔI MẬT KHẨU
 
-| STT | Vai trò được Admin duyệt | Tên đăng nhập | Mật khẩu xác thực | Người dùng đại diện | Quyền hạn được duyệt |
-|:---:|---|---|---|---|---|
-| **1** | **Quản trị viên** (Admin) | `admin` | `admin_password_2026` | Quản trị viên hệ thống | Toàn quyền cấu hình, phê duyệt chức vụ người dùng, xem audit logs. |
-| **2** | **Ban Giám hiệu** (BGH) | `bgh.huongkhe` | `bgh_password_2026` | Thầy Phan Thanh Toàn | Theo dõi nền nếp toàn trường, chốt kỳ thi đua, xuất văn bản PDF. |
-| **3** | **Đoàn trường** | `doantruong.hk` | `doan_password_2026` | Thầy Trần Văn Đoàn | Thẩm định và xác minh vi phạm Sao đỏ, cộng điểm phong trào, tính lại BXH. |
-| **4** | **Đội Sao đỏ** (Trực tuần) | `saodo.tuan1` | `saodo_password_2026` | Em Hoàng Minh Thắng | Ghi nhận nhanh vi phạm trên điện thoại, theo dõi duyệt bản ghi của mình. |
-| **5** | **GVCN** | `gvcn.10a1` | `gvcn_password_2026` | Cô Nguyễn Thị Mai | Theo dõi lớp 10A1, nhận cảnh báo sớm (đi muộn 3 lần), ghi can thiệp sư phạm. |
-| **6** | **Học sinh** | `hocsinh.nam` | `hocsinh_password_2026` | Em Nguyễn Văn Nam | Tra cứu vi phạm cá nhân, gửi giải trình, gửi tâm sự vào Góc sẻ chia. |
-| **7** | **Chuyên viên tâm lý** | `tamly.huongkhe` | `tamly_password_2026` | Cô Đặng Thùy Linh | Được Admin cấp quyền chuyên biệt truy cập hồ sơ bảo mật Góc sẻ chia. |
+Không công khai tài khoản hoặc mật khẩu mẫu trong tài liệu hay giao diện đăng nhập. Admin tạo tài khoản mới trong mục quản lý người dùng; hệ thống sinh mật khẩu tạm thời và chỉ trả về một lần. Người dùng phải đổi mật khẩu ngay lần đăng nhập đầu tiên trước khi truy cập các chức năng khác.
+
+Không sử dụng tài khoản demo mặc định trong môi trường production. Mật khẩu bootstrap do lệnh seed production-safe tạo ra chỉ xuất hiện trong đầu ra của lần chạy đó; hãy chuyển cho quản trị viên qua kênh bảo mật và đổi ngay khi đăng nhập.
 
 ---
 
 ## 4. HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY DỰ ÁN
 
 ### 4.1. Chạy trên máy tính (Cục bộ)
+Tạo file cấu hình riêng từ mẫu (lệnh không ghi đè file đã có), rồi điền mật khẩu ứng dụng Gmail và thông tin SpeedSMS vào file đó. Django tự đọc `.env.local` hoặc `.env`; không đưa mật khẩu ứng dụng hoặc token thật lên Git:
+```powershell
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
+```
+
+### Cấu hình Gmail gửi email
+
+Hệ thống gửi email khôi phục mật khẩu và cảnh báo vi phạm qua Gmail SMTP (cổng 587/STARTTLS). Bật Xác minh 2 bước cho tài khoản Google, tạo **Mật khẩu ứng dụng** trong mục Bảo mật, rồi điền `GMAIL_SENDER_EMAIL` và `GMAIL_APP_PASSWORD` trong `.env.local` (hoặc `.env` khi chạy Docker). Không dùng mật khẩu đăng nhập Gmail và không commit mật khẩu ứng dụng.
+
+Các biến cần thiết:
+
+```text
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_USE_SSL=false
+EMAIL_TIMEOUT=10
+GMAIL_SENDER_EMAIL=<địa chỉ Gmail gửi>
+GMAIL_APP_PASSWORD=<Mật khẩu ứng dụng Gmail>
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+DEFAULT_FROM_EMAIL=
+SCHOOL_UNION_NOTIFICATION_EMAIL=<địa chỉ Gmail Đoàn trường>
+FRONTEND_BASE_URL=https://<tên-miền>
+```
+
+`GMAIL_SENDER_EMAIL` và `GMAIL_APP_PASSWORD` được dùng làm cấu hình nguồn; `EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD` là các tên tương thích với cấu hình Django hiện tại và chỉ cần đặt nếu muốn ghi đè chúng. `DEFAULT_FROM_EMAIL` mặc định dùng địa chỉ Gmail gửi. Email cảnh báo được đưa vào transactional outbox và worker gửi lại khi SMTP tạm lỗi; `SCHOOL_UNION_NOTIFICATION_EMAIL` là địa chỉ **nhận** cảnh báo (cũng có thể cấu hình qua trang quản trị). Trên môi trường triển khai như Vercel, khai báo secrets SMTP trong Environment Variables của dự án và chạy worker email bền vững cùng cơ sở dữ liệu dùng chung; không chạy worker trên filesystem SQLite tạm của serverless. Không gửi mật khẩu ứng dụng qua chat hoặc lưu trong Git.
+
+Nếu tài khoản Google Workspace không cho phép App Password, hãy nhờ quản trị viên tổ chức cung cấp SMTP relay hoặc nhà cung cấp email được phê duyệt; không tìm cách vượt qua chính sách bảo mật.
+
+Sau khi cấu hình, Admin đăng nhập và gọi `POST /api/conduct/email/test/` (có thể truyền `{"recipient_email":"..."}` để chọn hộp thư thử). Endpoint kiểm tra cấu hình rồi gửi thư thật; tối đa 5 lần trong 10 phút cho mỗi Admin. Lịch sử phân biệt `SMTP đã tiếp nhận` với việc thư thực sự vào Inbox, trạng thái này không thể xác nhận việc giao thư cuối cùng.
+
 ```bash
 # 1. Di chuyển vào thư mục dự án
 cd "C:\Users\Xuan Cuong\.gemini\antigravity\scratch\hk-student-hub"
@@ -73,18 +100,71 @@ python manage.py seed_hk_data
 
 # 5. Khởi chạy máy chủ phát triển
 python manage.py runserver 127.0.0.1:8000
+
+# 6. Ở cửa sổ terminal thứ nhất, chạy worker SMS
+python manage.py process_sms_queue --loop
+# Ở cửa sổ terminal thứ hai, chạy worker email
+python manage.py process_email_queue --loop
 ```
 Truy cập trình duyệt tại địa chỉ: `http://127.0.0.1:8000`
 
 ### 4.2. Chạy với Docker & Docker Compose
+Docker Compose tự đọc file `.env`; nếu bạn đang cấu hình trong `.env.local`, hãy tạo `.env` một lần (không ghi đè file có sẵn):
+```powershell
+if (-not (Test-Path .env)) {
+  if (Test-Path .env.local) { Copy-Item .env.local .env }
+  else { Copy-Item .env.example .env }
+}
+```
+
 ```bash
-# Khởi chạy toàn bộ hệ thống gồm máy chủ web Gunicorn và PostgreSQL
+# Khởi chạy máy chủ web, PostgreSQL và worker SMS/email nền
 docker-compose up --build -d
 ```
 
-### 4.3. Lệnh quản lý dữ liệu mẫu
-- Khởi tạo dữ liệu mẫu: `python manage.py seed_hk_data`
-- Xóa sạch dữ liệu mẫu an toàn: `python manage.py seed_hk_data --clean`
+### 4.3. Cấu hình SpeedSMS khi ghi nhận vi phạm
+
+Tin vi phạm được ghi trước vào cơ sở dữ liệu; hàng đợi nền mới gửi SMS từ backend. Lỗi SpeedSMS không làm mất báo cáo. Khi gửi SMS tự động đang tắt, lịch sử ghi `SKIPPED`. Access Token chỉ được đọc từ biến môi trường trên máy chủ, không nhập vào giao diện quản trị và không được trả về trình duyệt.
+
+Tạo Access Token tại [SpeedSMS Connect](https://connect.speedsms.vn), sau đó cấu hình các biến dưới đây cho cả tiến trình web và worker. Không commit token thật vào Git:
+
+```text
+SPEEDSMS_API_BASE_URL=https://api.speedsms.vn/index.php
+SPEEDSMS_ACCESS_TOKEN=<Access Token thật>
+SPEEDSMS_SMS_TYPE=<loại đã được tài khoản cấp quyền>
+SPEEDSMS_SENDER=<sender đã đăng ký, nếu loại tin yêu cầu>
+SPEEDSMS_RECIPIENT_PHONE=<số điện thoại Đoàn trường>
+SPEEDSMS_WEBHOOK_SECRET=<chuỗi ngẫu nhiên dài, chỉ dùng trong URL webhook>
+SPEEDSMS_ENABLED=false
+SMS_REQUEST_TIMEOUT=10
+```
+
+Đăng nhập SpeedSMS để xác nhận loại tin và sender được phép dùng. Các loại được tài liệu API liệt kê gồm 2, 3, 4, 5 và 6; cấu hình hiện yêu cầu sender với loại 2, 3 và 5. Không tự chọn loại hoặc tên sender thay cho quản trị viên. Trang **Cấu hình SMS** cho phép Admin lưu số nhận, loại tin, sender, giới hạn gửi và số lần thử lại. Giá trị ở trang quản trị được ưu tiên; nếu để trống thì hệ thống dùng giá trị tương ứng trong môi trường máy chủ. Token có thể đổi bằng cách cập nhật biến môi trường và khởi động lại web/worker.
+
+Quy trình bật an toàn: cấu hình token, loại tin, sender và số nhận; kiểm tra **Kết nối / số dư** trong trang quản trị; đặt `SPEEDSMS_ENABLED=true` trên máy chủ và chạy **Gửi tin thử** tới số nhận đã cấu hình; sau khi tin thử thành công, bật **Tự động gửi** trong trang quản trị. Lệnh gửi thử tạo một SMS thật và có thể tính phí. Worker nền phải đang chạy bằng `python manage.py process_sms_queue --loop`.
+
+Backend gọi API qua HTTPS với HTTP Basic Authentication (`username` là Access Token, `password` là `x`). Gửi tin qua `POST /sms/send` bằng JSON (`to` là mảng số nhận, `content`, loại `sms_type` dạng số và `sender`). Phản hồi `status=success`, `code=00` lưu `data.tranId`, số tin và chi phí. Nút **Kiểm tra** dùng `GET /sms/status/{tranId}`; trạng thái API `1` chỉ được coi là đã gửi tới mạng, không phải xác nhận đã tới điện thoại. Chỉ Delivery Status Report hợp lệ mới đặt trạng thái `DELIVERED`. Nếu kết nối đứt trước khi backend nhận được `tranId`, giao dịch không tự gửi lại; Admin cần đối chiếu tài khoản SpeedSMS trước khi thử thủ công.
+
+SpeedSMS chưa công bố chữ ký xác thực cho Delivery Status Report trong tài liệu API. Tạo một chuỗi ngẫu nhiên dài cho `SPEEDSMS_WEBHOOK_SECRET`, rồi khai báo trong SpeedSMS mục **Setting → Webhook** URL HTTPS chính xác dạng `https://<ten-mien>/api/webhooks/speedsms/delivery-report/<SPEEDSMS_WEBHOOK_SECRET>/`. Đây là URL mang bí mật chia sẻ, không phải chữ ký mật mã của SpeedSMS; endpoint từ chối URL sai, chỉ xử lý `type=report`, đối chiếu mã giao dịch và số nhận, khử lặp sự kiện, và chỉ cập nhật trạng thái SMS. Không dùng payload không xác thực làm bằng chứng giao hàng.
+
+`ACCEPTED` nghĩa là SpeedSMS nhận yêu cầu gửi; chỉ `DELIVERED` mới xuất hiện khi webhook xác thực báo đã tới điện thoại. SpeedSMS dùng `status=0` cho chuyển thành công, `1–63` cho lỗi tạm thời và `>=64` cho lỗi cuối. Lỗi cấu hình, số dư không đủ, tham số và số điện thoại không hợp lệ không được tự thử vô hạn. Lỗi kết nối tạm thời được thử lại theo chính sách tăng dần; nếu phản hồi bị mất và chưa biết SpeedSMS đã nhận tin hay chưa, hệ thống không gửi lại tự động để tránh tính phí trùng và đánh dấu cần Admin kiểm tra.
+
+Trang quản trị hiển thị lịch sử, số nhận đã che, mã giao dịch, số SMS, chi phí, trạng thái và lỗi đã làm sạch. Xem [tài liệu SMS API SpeedSMS](https://speedsms.vn/sms-api/) và [hướng dẫn dịch vụ SMS API](https://speedsms.vn/sms-api-service/).
+
+### 4.4. Lệnh dữ liệu mẫu
+- **Development/Preview (`DEBUG=True`)**: `python manage.py seed_hk_data` nạp bộ dữ liệu phục vụ phát triển.
+- **Production (`DEBUG=False`)**: chỉ dùng `python manage.py seed_hk_data --production-safe` trên cơ sở dữ liệu trống. Lệnh từ chối chạy nếu đã có dữ liệu; bộ dữ liệu được ẩn danh, không có hồ sơ tư vấn hay nhật ký thao tác, các tài khoản mẫu bị vô hiệu hóa và chỉ tài khoản bootstrap admin được kích hoạt.
+- `python manage.py seed_hk_data --clean` chỉ hoạt động khi `DEBUG=True`; lệnh bị chặn khi `DEBUG=False`.
+- Production demo trên Vercel dùng riêng `sample_data/demo.sqlite3`; biến `DATABASE_URL` không được dùng trong chế độ này. Bộ dữ liệu gồm tài khoản demo và dữ liệu minh họa đã ẩn danh, không gồm hồ sơ tư vấn hay nhật ký thao tác.
+- Trên Vercel, ứng dụng chỉ cho đăng nhập và xem dữ liệu mẫu. Mọi thao tác thay đổi dữ liệu bị chặn vì ổ đĩa của function không lưu bền vững hoặc chia sẻ giữa các instance.
+- Tạo SQLite mẫu trên một file đích mới, trống bằng PowerShell:
+  ```powershell
+  $env:DB_NAME = 'sample_data/demo.sqlite3'
+  python manage.py migrate
+  python manage.py build_demo_dataset
+  ```
+
+Không đưa mật khẩu tạm thời hoặc dữ liệu cá nhân vào log, ticket hay kho mã nguồn.
 
 ---
 

@@ -11,6 +11,9 @@ class EarlyWarningRuleViewSet(viewsets.ModelViewSet):
     serializer_class = EarlyWarningRuleSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
@@ -21,6 +24,9 @@ class EarlyWarningAlertViewSet(viewsets.ModelViewSet):
     queryset = EarlyWarningAlert.objects.all().select_related('school_class', 'student', 'rule', 'homeroom_teacher')
     serializer_class = EarlyWarningAlertSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
 
     def get_queryset(self):
         user = self.request.user

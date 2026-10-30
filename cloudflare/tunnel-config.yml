@@ -1,0 +1,32 @@
+# ==============================================================================
+# CLOUDFLARE TUNNEL (ZERO TRUST) CONFIGURATION FOR EDUMENTOR.EDU.VN
+# Tài khoản Cloudflare: cuonghk1108@gmail.com
+# ==============================================================================
+
+tunnel: hk-student-hub
+credentials-file: C:\Users\Xuan Cuong\.cloudflared\hk-student-hub.json
+
+ingress:
+  # 1. Tên miền gốc
+  - hostname: edumentor.edu.vn
+    service: http://127.0.0.1:8000
+    originRequest:
+      connectTimeout: 30s
+      httpHostHeader: edumentor.edu.vn
+
+  # 2. Tên miền www
+  - hostname: www.edumentor.edu.vn
+    service: http://127.0.0.1:8000
+    originRequest:
+      connectTimeout: 30s
+      httpHostHeader: www.edumentor.edu.vn
+
+  # 3. Subdomain nếu cần (vd: hub.edumentor.edu.vn)
+  - hostname: hub.edumentor.edu.vn
+    service: http://127.0.0.1:8000
+    originRequest:
+      connectTimeout: 30s
+      httpHostHeader: hub.edumentor.edu.vn
+
+  # 4. Fallback 404 cho các request không khớp
+  - service: http_status:404

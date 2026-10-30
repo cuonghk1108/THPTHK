@@ -1,0 +1,16 @@
+name = "hk-student-hub-edge"
+main = "worker.js"
+compatibility_date = "2026-10-24"
+
+# ==============================================================================
+# CLOUDFLARE WORKER REVERSE PROXY & EDGE CACHE FOR HK STUDENT HUB
+# ==============================================================================
+
+[vars]
+# Địa chỉ máy chủ Backend Origin (URL Cloudflare Tunnel hoặc Cloud Server)
+ORIGIN_URL = "http://127.0.0.1:8000"
+CACHE_STATIC_SECONDS = "86400" # 24h cache cho tệp tĩnh trên 300+ PoP Cloudflare Edge
+
+# [routes]
+# pattern = "studenthub.thpthuongkhe.edu.vn/*"
+# zone_name = "thpthuongkhe.edu.vn"
